@@ -1,0 +1,70 @@
+---
+- name: Create AMI of EC2 via Automation
+  hosts: all
+  gather_facts: False
+  tasks:
+    - name: "check the connectivity with remote host"
+      ping:
+
+    - name: "print given all parameter value"
+      debug:
+        msg: " IP ADDRESS:{{ private_ip_address }} | REGION NAME:{{ region_name }} | PROFILE NAME:{{ profile_name }} "
+
+    - name: "get ec2 instance id"
+      ec2_instance_info:
+        profile: "{{ profile_name }}"
+        region: "{{ region_name }}"
+        filters:
+          private-ip-address: "{{ private_ip_address }}"
+      register: instance_info
+      delegate_to: localhost
+
+    - name: "set instance id variable"
+      set_fact:
+        instance_id: "{{ instance_info.instances[0].instance_id }}"
+      delegate_to: localhost
+
+    - name: "print instance id"
+      debug:
+        msg: "Instance ID: {{ instance_id }}"
+      delegate_to: localhost
+
+    - name: "enable termination protection on remote host"
+      ec2_instance:
+        instance_ids: "{{ instance_id }}"
+        profile: "{{ profile_name }}"
+        region: "{{ region_name }}"
+        termination_protection: yes
+      delegate_to: localhost
+
+    - name: "get the current date & time"
+      command: "date '+%Y-%m-%d__%H-%M-%S'"
+      register: current_date_result
+
+    - name: "display current date"
+      debug:
+        var: current_date_result.stdout_lines[0]
+
+    - name: "create ami of remote host"
+      ec2_ami:
+        instance_id: "{{ instance_id }}"
+        name: "{{ private_ip_address }}__{{ instance_id }}__ami_bkp__{{ current_date_result.stdout_lines[0] }}"
+        profile: "{{ profile_name }}"
+        region: "{{ region_name }}"
+        tags:
+          Name: "{{ private_ip_address }}__{{ instance_id }}__ami_bkp__{{ current_date_result.stdout_lines[0] }}"
+        description: "AMI created by Ansible"
+        no_reboot: true
+        # wait: yes
+      delegate_to: localhost
+      register: ami_result
+
+    - name: "print ami id"
+      debug:
+        var: ami_result.image_id
+      delegate_to: localhost
+
+    - name: "print ami name"
+      debug:
+        var: ami_result.name
+      delegate_to: localhost
