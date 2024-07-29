@@ -1,4 +1,5 @@
-# Create AMI of EC2 via Automation
+# `PART -1`
+## Create AMI of EC2 via Automation
 
 Step 1: check the connectivity with remote host
 
@@ -23,3 +24,5 @@ Step 10: print ami id
 Step 11: print ami name
 
 
+# `PART -2`
+## Automation EC2 Patching
